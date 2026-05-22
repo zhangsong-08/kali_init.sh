@@ -172,8 +172,8 @@ update_script() {
     echo -e "${YELLOW}[信息]${NC} 正在检查最新版本..."
     
     # 【修改点】使用 ghproxy 加速
-    GITHUB_RAW_URL="https://ghproxy.com/https://raw.githubusercontent.com/zhangsong-08/kali_init.sh/main/kali_init.sh"
-    
+    GITHUB_RAW_URL="https://gh-proxy.com/https://raw.githubusercontent.com/zhangsong-08/kali_init.sh/main/kali_init.sh"
+
     # 创建临时文件
     TEMP_SCRIPT=$(mktemp /tmp/kali_init_update.XXXXXX.sh)
     echo -e "${YELLOW}[信息]${NC} 已创建临时文件: $TEMP_SCRIPT"
