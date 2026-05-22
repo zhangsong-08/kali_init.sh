@@ -237,7 +237,7 @@ main_menu() {
         echo ""
         echo -e "${GREEN}========================================${NC}"
         echo -e "${GREEN}  Kali Linux 初始化配置工具 (CLI版)   ${NC}"
-        echo -e "${GREEN}  作者: zs08                          ${NC}"
+        echo -e "${GREEN}  作者: zhangsong-08[zs08]                          ${NC}"
         echo -e "${GREEN}========================================${NC}"
         echo "1) 自动化配置中文环境"
         echo "2) 更换国内软件源"
