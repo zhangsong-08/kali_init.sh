@@ -169,10 +169,10 @@ EOF
 
 # ==================== 功能 3: 自动更新脚本 (使用 wget) ====================
 update_script() {
-    echo -e "${YELLOW}[信息]${NC} 正在启动脚本更新程序..."
+    echo -e "${YELLOW}[信息]${NC} 正在检查最新版本..."
     
-    # 定义 GitHub 原始文件地址
-    GITHUB_RAW_URL="https://raw.githubusercontent.com/zhangsong-08/kali_init.sh/main/kali_init.sh"
+    # 【修改点】使用 ghproxy 加速
+    GITHUB_RAW_URL="https://ghproxy.com/https://raw.githubusercontent.com/zhangsong-08/kali_init.sh/main/kali_init.sh"
     
     # 创建临时文件
     TEMP_SCRIPT=$(mktemp /tmp/kali_init_update.XXXXXX.sh)
