@@ -23,6 +23,17 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# ==========================================
+# 自动修复 Windows 换行符问题
+# ==========================================
+# 检查当前脚本是否包含 \r，如果有则自动修复并重新执行
+if grep -Pl '\r' "$0" > /dev/null 2>&1; then
+    echo -e "${YELLOW}[警告]${NC} 检测到脚本包含 Windows 换行符，正在自动修复..."
+    sed -i 's/\r$//' "$0"
+    echo -e "${GREEN}[成功]${NC} 修复完成，正在重新启动脚本..."
+    exec bash "$0"
+fi
+
 # 获取系统版本代号 (例如: kali-rolling)
 CODENAME=$(lsb_release -sc 2>/dev/null)
 if [ -z "$CODENAME" ]; then
@@ -156,31 +167,47 @@ EOF
     read -p "按回车键返回主菜单..."
 }
 
-# ==================== 功能 3: 自动更新脚本 ====================
+# ==================== 功能 3: 自动更新脚本 (使用 wget) ====================
 update_script() {
-    echo -e "${YELLOW}[信息]${NC} 正在检查最新版本..."
+    echo -e "${YELLOW}[信息]${NC} 正在启动脚本更新程序..."
     
-    # 定义 GitHub 原始文件地址 (请确保替换为您仓库中实际的 raw 地址)
-    # 注意：github.com/zs08/kali-init-tui/blob/main/kali_init.sh 的 raw 地址通常是:
-    GITHUB_RAW_URL="https://raw.githubusercontent.com/zs08/kali-init-tui/main/kali_init.sh"
+    # 定义 GitHub 原始文件地址
+    GITHUB_RAW_URL="https://raw.githubusercontent.com/zhangsong-08/kali_init.sh/main/kali_init.sh"
     
     # 创建临时文件
     TEMP_SCRIPT=$(mktemp /tmp/kali_init_update.XXXXXX.sh)
+    echo -e "${YELLOW}[信息]${NC} 已创建临时文件: $TEMP_SCRIPT"
+
+    echo -e "${YELLOW}[信息]${NC} 正在连接 GitHub 并下载最新脚本..."
+    echo -e "${YELLOW}[信息]${NC} 目标地址: $GITHUB_RAW_URL"
     
-    # 下载新脚本
-    if curl -sL -o "$TEMP_SCRIPT" "$GITHUB_RAW_URL"; then
+    # 使用 wget 下载
+    # --no-check-certificate: 避免某些环境下 SSL 证书问题导致失败
+    # -q: 安静模式，不输出 wget 自身的进度条（如果需要看进度可去掉 -q）
+    # -O: 指定输出文件
+    if wget --no-check-certificate -q -O "$TEMP_SCRIPT" "$GITHUB_RAW_URL"; then
+        echo -e "${GREEN}[成功]${NC} 文件下载完成。"
+        
+        echo -e "${YELLOW}[信息]${NC} 正在校验下载内容的完整性..."
         # 简单校验：检查新脚本是否包含关键标识，防止下载失败或空文件
         if grep -q "Kali Linux 初始化配置工具" "$TEMP_SCRIPT"; then
-            echo -e "${GREEN}[成功]${NC} 新版本下载成功。"
+            echo -e "${GREEN}[成功]${NC} 内容校验通过，确认为有效脚本。"
             
-            # 比较版本（可选，这里简单直接替换）
-            echo -e "${YELLOW}[提示]${NC} 正在替换旧脚本..."
-            
-            # 赋予执行权限
+            echo -e "${YELLOW}[信息]${NC} 正在赋予新脚本执行权限..."
             chmod +x "$TEMP_SCRIPT"
             
+            echo -e "${YELLOW}[信息]${NC} 正在替换旧脚本..."
+            echo -e "${YELLOW}[信息]${NC} 原路径: $SCRIPT_PATH"
+            
             # 移动覆盖原脚本
-            mv "$TEMP_SCRIPT" "$SCRIPT_PATH"
+            if mv "$TEMP_SCRIPT" "$SCRIPT_PATH"; then
+                echo -e "${GREEN}[成功]${NC} 脚本文件替换成功！"
+            else
+                echo -e "${RED}[失败]${NC} 脚本文件替换失败，权限不足？"
+                rm -f "$TEMP_SCRIPT"
+                read -p "按回车键返回主菜单..."
+                return
+            fi
             
             echo -e "${GREEN}[完成]${NC} 脚本已更新至最新版本！"
             echo -e "${YELLOW}[提示]${NC} 脚本将在 3 秒后自动重启以应用更新..."
@@ -189,13 +216,15 @@ update_script() {
             # 重新执行当前脚本（此时已是新版本）
             exec bash "$SCRIPT_PATH"
         else
-            echo -e "${RED}[失败]${NC} 下载的脚本内容无效，已取消更新。"
+            echo -e "${RED}[失败]${NC} 下载的脚本内容无效（可能不是正确的脚本文件）。"
+            echo -e "${YELLOW}[信息]${NC} 已删除临时文件。"
             rm -f "$TEMP_SCRIPT"
             read -p "按回车键返回主菜单..."
         fi
     else
-        echo -e "${RED}[失败]${NC} 无法连接到 GitHub 下载更新。"
-        echo -e "${YELLOW}[建议]${NC} 请检查网络连接或手动访问: https://github.com/zs08/kali-init-tui"
+        echo -e "${RED}[失败]${NC} 无法从 GitHub 下载更新。"
+        echo -e "${YELLOW}[建议]${NC} 请检查网络连接或手动访问: $GITHUB_RAW_URL"
+        echo -e "${YELLOW}[信息]${NC} 已清理临时文件。"
         rm -f "$TEMP_SCRIPT"
         read -p "按回车键返回主菜单..."
     fi
